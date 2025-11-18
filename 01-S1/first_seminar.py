@@ -1,3 +1,4 @@
+# 1st TASK
 class ColorTranslator:
     # Convert from RGB scale to YUV
     def RGBtoYUV(self, R, G, B):
@@ -22,3 +23,16 @@ print(f"RGB: {R}, {G}, {B}; YUV: {Y}, {U}, {V}.")
 
 R, G, B = converter.YUVtoRGB(Y, U, V)
 print(f"YUV: {Y}, {U}, {V}; RGB: {R}, {G}, {B}.")
+#TODO: Implement it with the cmd or reading .txt file
+
+#2nd TASK
+#Foto from Halyna Chemerys https://unsplash.com/es/fotos/un-grupo-de-caballos-u3LdAMV_CIo?utm_source=unsplash&utm_medium=referral&utm_content=creditShareLink
+import os
+def resizeImage(filename, output_width, output_height):
+    os.system(f"ffmpeg -i {filename}.jpg -vf scale={output_width}:{output_height} horses_{output_width}_{output_height}.jpg")
+
+filename="horses"
+sizes = [[1000,1000], [500,500], [50,50], [100,100]]
+for size in sizes:
+    resizeImage(filename, size[0], size[1])
+#TODO: Improve the function if possible (maybe without using the os command)
