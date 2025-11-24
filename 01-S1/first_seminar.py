@@ -1,3 +1,5 @@
+import ffmpeg
+import os
 # 1st TASK
 class ColorTranslator:
     # Convert from RGB scale to YUV
@@ -27,12 +29,29 @@ print(f"YUV: {Y}, {U}, {V}; RGB: {R}, {G}, {B}.")
 
 #2nd TASK
 #Foto from Halyna Chemerys https://unsplash.com/es/fotos/un-grupo-de-caballos-u3LdAMV_CIo?utm_source=unsplash&utm_medium=referral&utm_content=creditShareLink
-import os
-def resizeImage(filename, output_width, output_height):
+def resizeImageOS(filename, output_width, output_height):
     os.system(f"ffmpeg -i {filename}.jpg -vf scale={output_width}:{output_height} horses_{output_width}_{output_height}.jpg")
 
 filename="horses"
 sizes = [[1000,1000], [500,500], [50,50], [100,100]]
 for size in sizes:
-    resizeImage(filename, size[0], size[1])
+    resizeImageOS(filename, size[0], size[1])
 #TODO: Improve the function if possible (maybe without using the os command)
+
+#2nd TASK with ffmpeg
+#Code example found in https://github.com/kkroening/ffmpeg-python/blob/master/examples/README.md
+#Scale shell command --> ffmpeg -i input_image.jpg -vf scale=500:500 output_image.jpg  (vb = video filter)
+
+def resizeImage_ffmpeg(filename, output_width, output_height):
+    (
+        ffmpeg
+        .input(f"{filename}.jpg")
+        .filter("scale", output_width, output_height)
+        .output(f"horses_{output_width}_{output_height}_ffmpeg.jpg")
+        .run()
+    )
+
+filename="horses"
+sizes = [[1000,1000], [500,500], [50,50], [100,100]]
+for size in sizes:
+    resizeImage_ffmpeg(filename, size[0], size[1])
