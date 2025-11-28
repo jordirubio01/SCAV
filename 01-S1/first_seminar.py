@@ -122,10 +122,47 @@ def compress_bw_hardest(input_filename):
         compressed_size = os.path.getsize(output_filename)
         compression_ratio = (1 - (compressed_size / original_size)) * 100
 
-        print("RESULTATS:")
-        print(f"1. Imatge original: {original_size / 1024:.2f} KB")
-        print(f"2. Imatge B/N comprimida (q=31): {compressed_size / 1024:.2f} KB")
-        print(f"3. Reducció de mida: {compression_ratio:.2f}%")
-
 filename = "horses.jpg" 
 compress_bw_hardest(filename)   
+
+#5th Task
+def run_length_encoding(data):
+    #Substitueix les seqüències de zeros per un parell (0, count).
+
+    encoded = []
+    i = 0
+
+    while i < len(data):
+        # Cas 1: El valor NO és zero
+        if data[i] != 0:
+            encoded.append(data[i])
+            i += 1
+        
+        # Cas 2: El valor ÉS zero
+        else:
+            count = 0
+            # Comptem quants zeros seguits hi ha
+            while i < len(data) and data[i] == 0:
+                count += 1
+                i += 1
+        
+            encoded.append(0)
+            encoded.append(count)
+
+    return encoded
+
+
+#Vector simulat que s'assembli al resultat d'una DCT quantitzada --> Molta informació al principi, molts zeros al final
+sim_vector = [
+    25, 12, 10, 0, 0, 0, 0, 5,  
+    0, 0, 2, 0,                 
+    0, 0, 0, 0, 0, 0, 0, 0,     
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+]
+
+rle_result = run_length_encoding(sim_vector)
+print("----5th Task----")
+print(f"Sortida (Encoded):    {rle_result}")
+print(f"Mida comprimida: {len(rle_result)} elements")
+
