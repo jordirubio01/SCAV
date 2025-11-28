@@ -1,5 +1,7 @@
 import ffmpeg
 import os
+from PIL import Image
+import numpy as np
 # 1st TASK
 class ColorTranslator:
     # Convert from RGB scale to YUV
@@ -33,6 +35,7 @@ def resizeImageOS(filename, output_width, output_height):
     os.system(f"ffmpeg -i {filename}.jpg -vf scale={output_width}:{output_height} horses_{output_width}_{output_height}.jpg")
 
 filename="horses"
+print(os.path.exists(filename))
 sizes = [[1000,1000], [500,500], [50,50], [100,100]]
 for size in sizes:
     resizeImageOS(filename, size[0], size[1])
@@ -55,3 +58,74 @@ filename="horses"
 sizes = [[1000,1000], [500,500], [50,50], [100,100]]
 for size in sizes:
     resizeImage_ffmpeg(filename, size[0], size[1])
+
+#3rd Task
+def serpentine(matrix):
+
+    rows, cols = matrix.shape
+    solution = [[] for i in range(rows + cols - 1)]
+
+    for i in range(rows):
+        for j in range(cols):
+            sum_idx = i + j
+            if sum_idx % 2 == 0:
+                # Si la suma d'índexs és parella, afegim al principi (pujada)
+                solution[sum_idx].insert(0, matrix[i][j])
+            else:
+                # Si és senar, afegim al final (baixada)
+                solution[sum_idx].append(matrix[i][j])
+
+    # Aplanar la llista de llistes en un sol vector lineal
+    return [item for sublist in solution for item in sublist]
+
+
+# Simulem llegir un bloc de 8x8 (com es fa a JPEG) podem fer servir una imatge real tenint en compte que JPEG treballa en blocs de 8x8
+filename = "horses.jpg" 
+# Convertim a gris per simplificar l'exemple (valors 0-255)
+img = Image.open(filename).convert('L') 
+img_array = np.array(img)
+
+# Agafem només el primer bloc de 8x8 píxels de la imatge
+# (Tal com deiem a teoria: "used to convert the 8x8 DCT spectrum")
+block_8x8 = img_array[0:8, 0:8] 
+
+print("--- Bloc original 8x8 (Bytes/Pixels) ---")
+print(block_8x8)
+
+serpentine_bytes = serpentine(block_8x8)
+
+print("\n--- Sequencia Serpentine (Zig-Zag) ---")
+print(serpentine_bytes)
+print(f"Total elements: {len(serpentine_bytes)}") # Hauria de ser 64
+
+#4th Task
+def compress_bw_hardest(input_filename):
+
+    output_filename = f"bw_compressed_{input_filename}"
+    
+    try:
+        (
+            ffmpeg
+            .input(input_filename)
+            .filter('hue', s=0)       # Filtre: Saturation = 0 (Blanc i Negre)
+            .output(output_filename, **{'qscale:v': 31}) # qscale:v 31 és la pitjor qualitat (màxima compressió)
+            .overwrite_output()
+            .run()          
+        )
+    except ffmpeg.Error as e:
+        print("Hi ha hagut un error amb FFmpeg:", e)
+        return
+
+    # Comentari de resultats (Comparació de mides)
+    if os.path.exists(output_filename):
+        original_size = os.path.getsize(input_filename)
+        compressed_size = os.path.getsize(output_filename)
+        compression_ratio = (1 - (compressed_size / original_size)) * 100
+
+        print("RESULTATS:")
+        print(f"1. Imatge original: {original_size / 1024:.2f} KB")
+        print(f"2. Imatge B/N comprimida (q=31): {compressed_size / 1024:.2f} KB")
+        print(f"3. Reducció de mida: {compression_ratio:.2f}%")
+
+filename = "horses.jpg" 
+compress_bw_hardest(filename)   
