@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  video-api:
+    build: .
+    container_name: practice1-container
+    ports:
+      - "8000:8000"
+    volumes:
+      # Això fa la màgia de connectar les carpetes automàticament
+      - ./videos:/app/videos
