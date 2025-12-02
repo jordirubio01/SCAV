@@ -1,27 +1,157 @@
-from typing import Union
-
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import List, Optional
+import subprocess
+import os
+import numpy as np # Necessari perquè el fas servir a la S1
 
 app = FastAPI()
 
-# We have used the guide from https://fastapi.tiangolo.com/tutorial/
+# --- MODELS DE DADES (Pydantic) ---
+class RGBInput(BaseModel):
+    r: int
+    g: int
+    b: int
 
-class Item(BaseModel):
-    name: str
+class RLEInput(BaseModel):
+    data: List[int]
+
+class ResizeInput(BaseModel):
     width: int
     height: int
-    color_format: str
+
+# --- FUNCIONS AUXILIARS (Adaptades de la teva S1) ---
+def run_length_encoding_logic(data):
+    # La teva lògica exacta de la S1
+    encoded = []
+    i = 0
+    while i < len(data):
+        if data[i] != 0:
+            encoded.append(data[i])
+            i += 1
+        else:
+            count = 0
+            while i < len(data) and data[i] == 0:
+                count += 1
+                i += 1
+            encoded.append(0)
+            encoded.append(count)
+    return encoded
+
+# --- ENDPOINTS DE L'API ---
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello World!"}
+    return {"message": "API Sessió 1 Integrada amb Docker i FFMPEG"}
 
+# ---------------------------------------------------------
+# EXERCICI 4: ACCIÓ 1 - Conversor de Color (De la teva Task 2)
+# ---------------------------------------------------------
+@app.post("/converter/rgb-to-yuv")
+def convert_rgb_to_yuv(color: RGBInput):
+    """
+    Implementació de la teva classe ColorTranslator via API
+    """
+    # La teva fórmula exacta
+    Y =  0.257 * color.r + 0.504 * color.g + 0.098 * color.b + 16
+    U = -0.148 * color.r - 0.291 * color.g + 0.439 * color.b + 128
+    V =  0.439 * color.r - 0.368 * color.g - 0.071 * color.b + 128
+    
+    return {
+        "input_rgb": {"r": color.r, "g": color.g, "b": color.b},
+        "output_yuv": {"y": round(Y, 2), "u": round(U, 2), "v": round(V, 2)}
+    }
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+# ---------------------------------------------------------
+# EXERCICI 4: ACCIÓ 2 - Run Length Encoding (De la teva Task 6)
+# ---------------------------------------------------------
+@app.post("/algorithm/rle")
+def perform_rle(payload: RLEInput):
+    """
+    Executa el teu algoritme de compressió RLE sobre una llista de números.
+    """
+    result = run_length_encoding_logic(payload.data)
+    compression_ratio = 0
+    if len(payload.data) > 0:
+        compression_ratio = (1 - (len(result) / len(payload.data))) * 100
+        
+    return {
+        "input_length": len(payload.data),
+        "encoded_data": result,
+        "encoded_length": len(result),
+        "compression_ratio_percent": round(compression_ratio, 2)
+    }
 
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
+# ---------------------------------------------------------
+# EXERCICI 4: ACCIÓ 3 - Resize Image (De la teva Task 3)
+# ---------------------------------------------------------
+@app.post("/image/resize/{filename}")
+def resize_image(filename: str, settings: ResizeInput):
+    """
+    Fa servir FFMPEG dins del Docker per redimensionar una imatge/vídeo
+    """
+    # Rutes dins del Docker
+    input_path = f"videos/{filename}"
+    output_filename = f"resized_{settings.width}x{settings.height}_{filename}"
+    output_path = f"videos/{output_filename}"
+
+    if not os.path.exists(input_path):
+        raise HTTPException(status_code=404, detail=f"El fitxer {filename} no existeix a la carpeta 'videos'")
+
+    # Comanda FFMPEG adaptada de la teva S1
+    # ffmpeg -i input -vf scale=w:h output
+    command = [
+        "ffmpeg", "-y",
+        "-i", input_path,
+        "-vf", f"scale={settings.width}:{settings.height}",
+        output_path
+    ]
+
+    try:
+        subprocess.run(command, check=True)
+        return {"status": "success", "output_file": output_filename}
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Error FFMPEG: {str(e)}")
+
+# ---------------------------------------------------------
+# EXERCICI 4: ACCIÓ 4 - BW Hard Compression (De la teva Task 5)
+# ---------------------------------------------------------
+@app.post("/image/bw-compression/{filename}")
+def compress_bw(filename: str):
+    """
+    Converteix a blanc i negre i comprimeix al màxim (qscale 31)
+    """
+    input_path = f"videos/{filename}"
+    output_filename = f"bw_compressed_{filename}"
+    output_path = f"videos/{output_filename}"
+
+    if not os.path.exists(input_path):
+        raise HTTPException(status_code=404, detail="Fitxer no trobat")
+
+    # Comanda: ffmpeg -i input -vf hue=s=0 -q:v 31 output
+    # (Hem adaptat la teva lògica de 'hue', s=0 i 'qscale:v': 31)
+    command = [
+        "ffmpeg", "-y",
+        "-i", input_path,
+        "-vf", "hue=s=0",
+        "-q:v", "31",
+        output_path
+    ]
+
+    try:
+        subprocess.run(command, check=True)
+        
+        # Calculem la reducció de mida com feies tu
+        original_size = os.path.getsize(input_path)
+        new_size = os.path.getsize(output_path)
+        ratio = (1 - (new_size / original_size)) * 100
+
+        return {
+            "status": "compressed",
+            "original_size": original_size,
+            "compressed_size": new_size,
+            "compression_ratio": f"{round(ratio, 2)}%",
+            "output_file": output_filename
+        }
+    except subprocess.CalledProcessError as e:
+         raise HTTPException(status_code=500, detail=f"Error FFMPEG: {str(e)}")
