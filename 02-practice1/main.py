@@ -3,11 +3,11 @@ from pydantic import BaseModel
 from typing import List, Optional
 import subprocess
 import os
-import numpy as np # Necessari perquè el fas servir a la S1
+import numpy as np 
 
 app = FastAPI()
 
-# --- MODELS DE DADES (Pydantic) ---
+# Data Models
 class RGBInput(BaseModel):
     r: int
     g: int
@@ -20,9 +20,8 @@ class ResizeInput(BaseModel):
     width: int
     height: int
 
-# --- FUNCIONS AUXILIARS (Adaptades de la teva S1) ---
+# Auxiliar function
 def run_length_encoding_logic(data):
-    # La teva lògica exacta de la S1
     encoded = []
     i = 0
     while i < len(data):
@@ -44,15 +43,14 @@ def run_length_encoding_logic(data):
 def read_root():
     return {"message": "API Sessió 1 Integrada amb Docker i FFMPEG"}
 
-# ---------------------------------------------------------
-# EXERCICI 4: ACCIÓ 1 - Conversor de Color (De la teva Task 2)
-# ---------------------------------------------------------
+
+# Color conversor
+
 @app.post("/converter/rgb-to-yuv")
 def convert_rgb_to_yuv(color: RGBInput):
     """
     Implementació de la teva classe ColorTranslator via API
     """
-    # La teva fórmula exacta
     Y =  0.257 * color.r + 0.504 * color.g + 0.098 * color.b + 16
     U = -0.148 * color.r - 0.291 * color.g + 0.439 * color.b + 128
     V =  0.439 * color.r - 0.368 * color.g - 0.071 * color.b + 128
@@ -62,9 +60,8 @@ def convert_rgb_to_yuv(color: RGBInput):
         "output_yuv": {"y": round(Y, 2), "u": round(U, 2), "v": round(V, 2)}
     }
 
-# ---------------------------------------------------------
-# EXERCICI 4: ACCIÓ 2 - Run Length Encoding (De la teva Task 6)
-# ---------------------------------------------------------
+
+# Run Length Encoding
 @app.post("/algorithm/rle")
 def perform_rle(payload: RLEInput):
     """
@@ -82,9 +79,7 @@ def perform_rle(payload: RLEInput):
         "compression_ratio_percent": round(compression_ratio, 2)
     }
 
-# ---------------------------------------------------------
-# EXERCICI 4: ACCIÓ 3 - Resize Image (De la teva Task 3)
-# ---------------------------------------------------------
+# Resize Image
 @app.post("/image/resize/{filename}")
 def resize_image(filename: str, settings: ResizeInput):
     """
@@ -98,7 +93,6 @@ def resize_image(filename: str, settings: ResizeInput):
     if not os.path.exists(input_path):
         raise HTTPException(status_code=404, detail=f"El fitxer {filename} no existeix a la carpeta 'videos'")
 
-    # Comanda FFMPEG adaptada de la teva S1
     # ffmpeg -i input -vf scale=w:h output
     command = [
         "ffmpeg", "-y",
@@ -113,9 +107,7 @@ def resize_image(filename: str, settings: ResizeInput):
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"Error FFMPEG: {str(e)}")
 
-# ---------------------------------------------------------
-# EXERCICI 4: ACCIÓ 4 - BW Hard Compression (De la teva Task 5)
-# ---------------------------------------------------------
+# BW Hard Compression
 @app.post("/image/bw-compression/{filename}")
 def compress_bw(filename: str):
     """
@@ -129,7 +121,6 @@ def compress_bw(filename: str):
         raise HTTPException(status_code=404, detail="Fitxer no trobat")
 
     # Comanda: ffmpeg -i input -vf hue=s=0 -q:v 31 output
-    # (Hem adaptat la teva lògica de 'hue', s=0 i 'qscale:v': 31)
     command = [
         "ffmpeg", "-y",
         "-i", input_path,
