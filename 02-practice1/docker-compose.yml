@@ -1,11 +1,22 @@
 version: '3.8'
 
 services:
-  video-api:
-    build: .
-    container_name: practice1-container
+  # FastAPI
+  api:
+    build: ./api
+    container_name: practice1-api
     ports:
       - "8000:8000"
     volumes:
-      # Això fa la màgia de connectar les carpetes automàticament
-      - ./videos:/app/videos
+      - ./videos:/data # Això connecta les carpetes automàticament
+    depends_on:
+      - ffmpeg
+
+  # FFMPEG
+  ffmpeg:
+    build: ./ffmpeg
+    container_name: practice1-ffmpeg
+    volumes:
+      - ./videos:/data # Això connecta les carpetes automàticament
+    ports:
+    - "9000:9000"
