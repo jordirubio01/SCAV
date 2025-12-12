@@ -21,6 +21,10 @@ class ResizeInput(BaseModel):
     width: int
     height: int
 
+class MatrixInput(BaseModel):
+    matrix: List[List[float]]
+
+
 # Auxiliar function
 def run_length_encoding_logic(data):
     encoded = []
@@ -38,7 +42,85 @@ def run_length_encoding_logic(data):
             encoded.append(count)
     return encoded
 
-# --- ENDPOINTS DE L'API ---
+#Serpentine
+def serpentine_logic(matrix_in):
+    matrix = np.array(matrix_in)
+    rows, cols = matrix.shape
+    solution = [[] for i in range(rows + cols - 1)]
+
+    for i in range(rows):
+        for j in range(cols):
+            sum_idx = i + j
+            if sum_idx % 2 == 0:
+                solution[sum_idx].insert(0, matrix[i][j])
+            else:
+                solution[sum_idx].append(matrix[i][j])
+    return [item for sublist in solution for item in sublist]
+
+#DCT Class
+class DCT_Converter:
+    def __init__(self, size=8):
+        self.N = size
+        self.T = self._create_basis_matrix(self.N)
+
+    def _create_basis_matrix(self, N):
+        T = np.zeros((N, N))
+        for i in range(N):
+            for j in range(N):
+                if i == 0:
+                    T[i, j] = np.sqrt(1 / N)
+                else:
+                    T[i, j] = np.sqrt(2 / N) * np.cos(((2 * j + 1) * i * np.pi) / (2 * N))
+        return T
+
+    def perform_DCT(self, pixel_block):
+        # Centrem valors restant 128
+        centered_block = pixel_block - 128
+        return np.dot(np.dot(self.T, centered_block), self.T.T)
+
+    def perform_IDCT(self, dct_block):
+        reconstructed = np.dot(np.dot(self.T.T, dct_block), self.T)
+        return reconstructed + 128
+
+#DWT Class
+class DWT_Converter:
+    def perform_DWT(self, image_matrix):
+        data = image_matrix.astype(float)
+        rows, cols = data.shape
+        
+        # Rows
+        evens_row, odds_row = data[:, 0::2], data[:, 1::2]
+        L_row, H_row = (evens_row + odds_row) / 2, (evens_row - odds_row) / 2
+        processed_rows = np.hstack((L_row, H_row))
+
+        # Columns
+        evens_col, odds_col = processed_rows[0::2, :], processed_rows[1::2, :]
+        L_col, H_col = (evens_col + odds_col) / 2, (evens_col - odds_col) / 2
+        
+        return np.vstack((L_col, H_col))
+
+    def perform_IDWT(self, dwt_matrix):
+        rows, cols = dwt_matrix.shape
+        half_rows, half_cols = rows // 2, cols // 2
+
+        # Inverse Columnes
+        L_col, H_col = dwt_matrix[:half_rows, :], dwt_matrix[half_rows:, :]
+        evens_col, odds_col = L_col + H_col, L_col - H_col
+        
+        reconstructed_cols = np.zeros((rows, cols))
+        reconstructed_cols[0::2, :] = evens_col
+        reconstructed_cols[1::2, :] = odds_col
+
+        # Inverse Rows
+        L_row, H_row = reconstructed_cols[:, :half_cols], reconstructed_cols[:, half_cols:]
+        evens_row, odds_row = L_row + H_row, L_row - H_row
+
+        final_image = np.zeros((rows, cols))
+        final_image[:, 0::2] = evens_row
+        final_image[:, 1::2] = odds_row
+        return final_image
+
+# Api endponts
 
 @app.get("/")
 def read_root():
@@ -79,6 +161,49 @@ def perform_rle(payload: RLEInput):
         "encoded_length": len(result),
         "compression_ratio_percent": round(compression_ratio, 2)
     }
+
+#Serpentine Endpoint
+@app.post("/algorithm/serpentine")
+def perform_serpentine(payload: MatrixInput):
+    """
+    Retorna l'escaneig en Zig-Zag d'una matriu NxM.
+    """
+    try:
+        result = serpentine_logic(payload.matrix)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+#DCT Endpoint
+@app.post("/algorithm/dct")
+def perform_dct(payload: MatrixInput):
+    """
+    Aplica la transformació DCT a un bloc (idealment 8x8).
+    """
+    try:
+        matrix = np.array(payload.matrix)
+        converter = DCT_Converter(size=matrix.shape[0])
+        dct_coeffs = converter.perform_DCT(matrix)
+        return {"dct_coefficients": dct_coeffs.tolist()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+#DWT Endpoint
+@app.post("/algorithm/dwt")
+def perform_dwt(payload: MatrixInput):
+    """
+    Aplica la transformació DWT (Haar) a una matriu.
+    """
+    try:
+        matrix = np.array(payload.matrix)
+        converter = DWT_Converter()
+        dwt_coeffs = converter.perform_DWT(matrix)
+        return {"dwt_coefficients": dwt_coeffs.tolist()}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # Resize Image (utilitza l'altre Docker amb FFMPEG)
 @app.post("/image/resize/{filename}")
