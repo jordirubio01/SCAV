@@ -10,9 +10,6 @@ class ResizeInput(BaseModel):
     width: int
     height: int
 
-class BWInput(BaseModel):
-    filename: str
-
 # --- ENDPOINTS DE L'API ---
 
 @app.get("/")
@@ -32,7 +29,7 @@ def resize_image(filename: str, settings: ResizeInput):
     output_path = f"/data/{output_filename}"
 
     if not os.path.exists(input_path):
-        raise HTTPException(status_code=404, detail="El fitxer {filename} no existeix a la carpeta 'data'")
+        raise HTTPException(status_code=404, detail=f"El fitxer {filename} no existeix a la carpeta 'data'")
 
     # ffmpeg -i input -vf scale=w:h output
     command = [
