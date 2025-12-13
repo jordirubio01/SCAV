@@ -42,6 +42,30 @@ Aquest projecte implementa una API REST amb **FastAPI** encapsulada dins d'un co
 
    Quan modifiquem la resolució del vídeo de 1080p i 30fps, el procés triga aproximadament 2 min 30 s. Per reduir el temps de les proves, hem tallat el vídeo de 10 min 34 s a 1 min, la qual cosa permet fer proves en menys de 10 s. Dit això, el codi segueix sent el mateix. D'altra banda, quan redimensionem un vídeo, l'àudio el mantenim igual. Al principi ens n'havíem descuidat, i no se sentia res, però la solució ha estat una línia senzilla que copia l'àudio original.
 
+2. Task 2
+
+   Hem afegit un endpoint que permet modificar el chroma subsampling amb l'opció `-pix_fmt` de FFmpeg (per exemple "yuv420p", "yuv422p", "yuv444p").
+
+3. Task 3
+
+   Per trobar almenys 5 dades rellevants del vídeo, hem utilitzat `ffprobe` per obtenir metadades en format JSON. Aquest endpoint retorna la duració del vídeo en segons, la mida en bytes, el bitrate global, el còdec del vídeo, la resolució (amplada i alçada), còdec d'àudio i sample rate d'àudio.
+
+4. Task 4
+
+   En aquesta part, tallem els primers 20 segons del vídeo, i empaquetem tres formats diferents d'àudio (AAC mono, MP3 estèreo amb baix bitrate, AC3 estèreo o amb més canals segons l'original) en un mateix video MP4. Per poder escoltar els canvis entre les tres pistes d'àudio, hem utilitzat el reproductor VLC, que és un reproductor multimedia lliure i de codi obert ([enllaç](https://images.videolan.org/vlc/index.es.html)).
+
+5. Task 5
+
+   Aquesta tasca ha estat semblant a la 4, ja que també hem utilitzat `ffprobe` per llegir els streams d'un contenidor MP4 i retornar-ne la quantitat de pistes (vídeo, àudio, subtítols).
+
+6. Task 6
+
+   Per aquesta tasca, hem utilitzat el filtre `codecview` de FFmpeg, que permet visualitzar macroblocks i motion vectors. La comanda `-flags2 +export_mvs` activa l'exportació de motion vectors, i `codecview=mv=pf+bf+bb` mostra els vectors de moviment dels diferents tipus de frames (forward, backward i bidirectional). A més, hi hem afegit una quadrícula per a veure clarament els macroblocks.
+
+7. Task 7
+
+   En aquesta última tasca, hem utilitzat el filtre `histogram` de FFmpeg, que genera un vídeo on es mostra l'histograma YUV de cada frame. Com a curiositat, al principi no podíem reproduir l'histograma amb el Reproductor Multimedia de Windows, però sí amb VLC. Per fer-ho més còmode, finalment hem decidit exportar l'histograma en format yuv420p amb `"-pix_fmt", "yuv420p"` (canviem el format de sortida, un cop ja hem analitzat l'histograma), de manera que sigui compatible amb el reproductor de Windows.
+
 ---
 **Autors:** Jordi Rubio & Lluc Sayols
 

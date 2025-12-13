@@ -17,13 +17,15 @@ class RGBInput(BaseModel):
 class RLEInput(BaseModel):
     data: List[int]
 
+class MatrixInput(BaseModel):
+    matrix: List[List[float]]
+
 class ResizeInput(BaseModel):
     width: int
     height: int
 
-class MatrixInput(BaseModel):
-    matrix: List[List[float]]
-
+class ChromaInput(BaseModel):
+    subsampling: str  # p.e. "yuv420p", "yuv422p", "yuv444p"
 
 # Auxiliar function
 def run_length_encoding_logic(data):
@@ -209,7 +211,7 @@ def perform_dwt(payload: MatrixInput):
 @app.post("/image/resize/{filename}")
 def resize_image(filename: str, settings: ResizeInput):
     """
-    Redimensionar una imatge/vídeo
+    Endpoint API que crida al servei FFMPEG per redimensionar una imatge/vídeo
     """
     payload = {"filename": filename, "width": settings.width, "height": settings.height}
     try:
@@ -224,7 +226,7 @@ def resize_image(filename: str, settings: ResizeInput):
 @app.post("/image/bw-compression/{filename}")
 def compress_bw(filename: str):
     """
-    Convertir a blanc i negre i comprimir al màxim (qscale 31)
+    Endpoint API que crida al servei FFMPEG per convertir a blanc i negre i comprimir al màxim (qscale 31)
     """
     payload = {"filename": filename}
     try:
@@ -239,13 +241,104 @@ def compress_bw(filename: str):
 @app.post("/video/change-resolution/{filename}")
 def change_resolution(filename: str, settings: ResizeInput):
     """
-    Canviar la resolució d'un vídeo
+    Endpoint API que crida al servei FFMPEG per canviar la resolució d'un vídeo
     """
     try:
         response = requests.post(
             f"http://ffmpeg:9000/video/change-resolution/{filename}",
             json={"width": settings.width, "height": settings.height}
         )
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error cridant el servei ffmpeg: {str(e)}")
+    
+# Canviar Chroma Subsampling (utilitza l'altre Docker amb FFMPEG)
+@app.post("/video/chroma-subsampling/{filename}")
+def change_chroma_subsampling(filename: str, settings: ChromaInput):
+    """
+    Endpoint API que crida al servei FFMPEG per modificar el chroma subsampling.
+    """
+    try:
+        response = requests.post(
+            f"http://ffmpeg:9000/video/chroma-subsampling/{filename}",
+            json={"subsampling": settings.subsampling}
+        )
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error cridant el servei ffmpeg: {str(e)}")
+    
+# Informació del Vídeo (utilitza l'altre Docker amb FFMPEG)
+@app.get("/video/info/{filename}")
+def get_video_info(filename: str):
+    """
+    Endpoint API que crida al servei FFMPEG per obtenir informació del vídeo
+    """
+    try:
+        response = requests.get(f"http://ffmpeg:9000/video/info/{filename}")
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error cridant el servei ffmpeg: {str(e)}")
+    
+# Big Buck Bunny Container (utilitza l'altre Docker amb FFMPEG)
+@app.post("/video/create-bbb-container/{filename}")
+def create_bbb_container(filename: str):
+    """
+    Endpoint API que crida al servei FFMPEG per crear un contenidor MP4 amb:
+    - Vídeo Big Buck Bunny retallat a 20s
+    - Àudio AAC mono
+    - Àudio MP3 stereo amb bitrate baix
+    - Àudio AC3
+    """
+    try:
+        response = requests.post(f"http://ffmpeg:9000/video/create-bbb-container/{filename}")
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error cridant el servei ffmpeg: {str(e)}")
+    
+# Nombre de Tracks del Contenidor (utilitza l'altre Docker amb FFMPEG)
+@app.get("/video/tracks/{filename}")
+def get_video_tracks(filename: str):
+    """
+    Endpoint API que crida al servei FFMPEG per comptar quantes pistes té un contenidor MP4.
+    """
+    try:
+        response = requests.get(f"http://ffmpeg:9000/video/tracks/{filename}")
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error cridant el servei ffmpeg: {str(e)}")
+    
+# Mostrar Macroblocks i Motion Vectors (utilitza l'altre Docker amb FFMPEG)
+@app.post("/video/show-motion/{filename}")
+def show_motion_vectors(filename: str):
+    """
+    Endpoint API que crida al servei FFMPEG per generar un vídeo amb macroblocks i vectors de moviment visibles.
+    """
+    try:
+        response = requests.post(f"http://ffmpeg:9000/video/show-motion/{filename}")
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error cridant el servei ffmpeg: {str(e)}")
+    
+# Mostrar Histograma YUV (utilitza l'altre Docker amb FFMPEG)
+@app.post("/video/yuv-histogram/{filename}")
+def show_yuv_histogram(filename: str):
+    """
+    Endpoint API que crida al servei FFMPEG per generar un vídeo amb el histograma YUV visible.
+    """
+    try:
+        response = requests.post(f"http://ffmpeg:9000/video/yuv-histogram/{filename}")
         if response.status_code != 200:
             raise HTTPException(status_code=response.status_code, detail=response.text)
         return response.json()
