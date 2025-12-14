@@ -34,6 +34,10 @@ Aquest projecte implementa una API REST amb **FastAPI** encapsulada dins d'un co
 
    `./videos`
 
+7. Per fer servir la GUI, utilitzeu el web local:
+
+   `http://localhost:8501`
+
 ## 📖 Tasques
 
 1. Task 1
@@ -49,6 +53,10 @@ Aquest projecte implementa una API REST amb **FastAPI** encapsulada dins d'un co
    Fins ara, tenim un API que permet fer diversos processos amb imatges i vídeos. Per crear una interfície gràfica, hi ha moltes opcions. Dit això, com que hem anat justos de temps i a més ja hi hem treballat en altres ocasions, hem decidit utilitzar Streamlit.
 
    En primer lloc, hem creat un nou servei, com API i FFMPEG, anomenat GUI. Aquest també comparteix les dades de la carpeta `./videos:/data`. Aquest servei utilitza el port 8501, que és el predeterminat per a Streamlit.
+
+4. Task 4
+
+   Finalment hem utilitzat intel·ligència artificial (IA) per a optimitzar parts del codi. Per exemple, a la conversió en diferents còdecs, i en particular per al codec av1 .mkv, hem utilitzat paràmetres com `-preset`, `-threads`, `-tile-columns`, `-tile-rows` per accelerar una mica el procés, ja que només volem fer proves.
 
 ---
 **Autors:** Jordi Rubio & Lluc Sayols

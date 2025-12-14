@@ -427,7 +427,9 @@ def convert_codecs(filename: str):
         elif codec == "h265":
             command = ["ffmpeg", "-y", "-i", input_path, "-c:v", "libx265", "-crf", "28", "-preset", "fast", output_path]
         elif codec == "av1":
-            command = ["ffmpeg", "-y", "-i", input_path, "-c:v", "libaom-av1", "-crf", "30", "-b:v", "0", output_path]
+            command = ["ffmpeg", "-y", "-i", input_path, "-c:v", "libaom-av1", "-crf", "30", "-b:v", "0",
+            "-preset", "6", "-threads", "8", "-tile-columns", "2", "-tile-rows", "2", output_path]
+            # ["ffmpeg", "-y", "-i", input_path, "-c:v", "libaom-av1", "-crf", "30", "-b:v", "0", output_path]
 
         try:
             subprocess.run(command, check=True)

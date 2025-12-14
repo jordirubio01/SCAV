@@ -14,6 +14,11 @@ class RGBInput(BaseModel):
     g: int
     b: int
 
+class YUVInput(BaseModel):
+    y: float
+    u: float
+    v: float
+
 class RLEInput(BaseModel):
     data: List[int]
 
@@ -130,7 +135,7 @@ def read_root():
 
 
 # Color conversor
-
+# RGB a YUV
 @app.post("/converter/rgb-to-yuv")
 def convert_rgb_to_yuv(color: RGBInput):
     """
@@ -144,7 +149,24 @@ def convert_rgb_to_yuv(color: RGBInput):
         "input_rgb": {"r": color.r, "g": color.g, "b": color.b},
         "output_yuv": {"y": round(Y, 2), "u": round(U, 2), "v": round(V, 2)}
     }
+# YUV a RGB
+@app.post("/converter/yuv-to-rgb")
+def convert_yuv_to_rgb(color: YUVInput):
+    """
+    Implementació inversa: de YUV a RGB via API
+    """
+    R = 1.164 * (color.y - 16) + 1.596 * (color.v - 128)
+    G = 1.164 * (color.y - 16) - 0.813 * (color.v - 128) - 0.391 * (color.u - 128)
+    B = 1.164 * (color.y - 16) + 2.018 * (color.u - 128)
 
+    return {
+        "input_yuv": {"y": color.y, "u": color.u, "v": color.v},
+        "output_rgb": {
+            "r": round(R, 2),
+            "g": round(G, 2),
+            "b": round(B, 2)
+        }
+    }
 
 # Run Length Encoding
 @app.post("/algorithm/rle")
