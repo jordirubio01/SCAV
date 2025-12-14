@@ -54,7 +54,7 @@ Aquest projecte implementa una API REST amb **FastAPI** encapsulada dins d'un co
 
 4. Task 4
 
-   Hem creat dos endpoints:
+   Hem creat diversos endpoints:
 
    - Endpoint /converter/rgb-to-yuv: Processa l'acció de la classe ColorTranslator (RGB a YUV), adaptada amb endpoint FastApi amb un model Pydantic (RGBInput).
    - Endpoint /algorithm/rle: Processa l'acció de l'algoritme de compressió RLE, s'exposa com endpoint que rep un vector i retorna la versió comprimida juntament amb el ratio.
