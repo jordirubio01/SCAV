@@ -1,4 +1,4 @@
-Seminari 1: JPEG, JPEG2000 and FFMpeg
+# Seminari 1: JPEG, JPEG2000 and FFMpeg
 
 En aquest primer seminari, vam realitzar diverses tasques, que aprofitem a la resta d'entregues.
 
