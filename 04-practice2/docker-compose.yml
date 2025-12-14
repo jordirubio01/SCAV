@@ -1,0 +1,20 @@
+services:
+  # FastAPI
+  api:
+    build: ./api
+    container_name: practice2-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./videos:/data # Això connecta les carpetes automàticament
+    depends_on:
+      - ffmpeg
+
+  # FFMPEG
+  ffmpeg:
+    build: ./ffmpeg
+    container_name: practice2-ffmpeg
+    volumes:
+      - ./videos:/data # Això connecta les carpetes automàticament
+    ports:
+    - "9000:9000"
