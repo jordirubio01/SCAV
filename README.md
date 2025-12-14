@@ -9,6 +9,6 @@ En aquest repositori, hi trobareu les quatre entregues corresponents a la part d
 
 
 ---
-**Autors:** Jordi Rubio & Lluc Sayols
+**Autors:** Jordi Rubio Arbona (266981) i Lluc Sayols Hidalgo (267172).
 
 **Assignatura:** Sistemes de Codificació d'Àudio i Video
