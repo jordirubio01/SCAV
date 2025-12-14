@@ -16,7 +16,7 @@ Aquest projecte implementa una API REST amb **FastAPI** encapsulada dins d'un co
 
 2. Situeu-vos al directori:
 
-   `cd 02-practice1`
+   `cd 03-S2`
 
 3. Construïr les imatges:
 
