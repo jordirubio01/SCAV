@@ -5,6 +5,20 @@ import os
 
 app = FastAPI()
 
+# --- NOVA FUNCIÓ PER EVITAR REPETIR CODI (TASK 4) ---
+def run_ffmpeg(command):
+    """
+    Executa una comanda FFMPEG i gestiona els errors automàticament.
+    """
+    try:
+        # capture_output=True ens permet veure el missatge d'error si falla
+        subprocess.run(command, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+        # Si falla, llancem l'error 500 directament aquí
+        # e.stderr conté el detall de per què s'ha queixat FFMPEG
+        print(f"Error intern FFMPEG: {e.stderr}") 
+        raise HTTPException(status_code=500, detail=f"FFmpeg error: {e.stderr}")
+    
 # Data Models
 class ResizeInput(BaseModel):
     width: int
@@ -75,11 +89,9 @@ def resize_image(filename: str, settings: ResizeInput):
         output_path
     ]
 
-    try:
-        subprocess.run(command, check=True)
-        return {"status": "success", "output_file": output_filename}
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"FFmpeg error: {str(e)}")
+# Cridem la funció helper (ella gestiona el try-except)
+    run_ffmpeg(command)
+    return {"status": "success", "output_file": output_filename}
 
 
 # BW Hard Compression (utilitza l'altre Docker amb FFMPEG)
@@ -104,23 +116,10 @@ def compress_bw(filename: str):
         output_path
     ]
 
-    try:
-        subprocess.run(command, check=True)
+    run_ffmpeg(command)
 
-        # Calculem la reducció de mida
-        original_size = os.path.getsize(input_path)
-        new_size = os.path.getsize(output_path)
-        ratio = (1 - (new_size / original_size)) * 100
+    original_size = os.path.getsize(input_path)
 
-        return {
-            "status": "compressed",
-            "original_size": original_size,
-            "compressed_size": new_size,
-            "compression_ratio": f"{round(ratio, 2)}%",
-            "output_file": output_filename
-        }
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"Error FFMPEG: {str(e)}")
     
 
 # Canviar Resolució Vídeo (utilitza l'altre Docker amb FFMPEG)
@@ -145,22 +144,10 @@ def change_resolution(filename: str, settings: ResizeInput):
         output_path
     ]
 
-    try:
-        subprocess.run(command, check=True)
-        # Calculem mides per mostrar la reducció
-        original_size = os.path.getsize(input_path)
-        new_size = os.path.getsize(output_path)
-        ratio = (1 - (new_size / original_size)) * 100
 
-        return {
-            "status": "resolution_changed",
-            "original_size": original_size,
-            "new_size": new_size,
-            "compression_ratio": f"{round(ratio, 2)}%",
-            "output_file": output_filename
-        }
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"FFmpeg error: {str(e)}")
+    run_ffmpeg(command)
+
+    original_size = os.path.getsize(input_path)
     
 # Canviar Chroma Subsampling
 @app.post("/video/chroma-subsampling/{filename}")
@@ -183,22 +170,9 @@ def change_chroma_subsampling(filename: str, settings: ChromaInput):
         output_path
     ]
 
-    try:
-        subprocess.run(command, check=True)
-        original_size = os.path.getsize(input_path)
-        new_size = os.path.getsize(output_path)
-        ratio = (1 - (new_size / original_size)) * 100
-
-        return {
-            "status": "chroma_changed",
-            "original_size": original_size,
-            "new_size": new_size,
-            "compression_ratio": f"{round(ratio, 2)}%",
-            "output_file": output_filename,
-            "pix_fmt": settings.subsampling
-        }
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"FFmpeg error: {str(e)}")
+    run_ffmpeg(command)
+    
+    original_size = os.path.getsize(input_path)
 
 # Informació del Vídeo
 @app.get("/video/info/{filename}")
@@ -284,17 +258,14 @@ def create_bbb_container(filename: str):
         output_path
     ]
 
-    try:
-        subprocess.run(command, check=True)
-        return {
-            "status": "bbb_container_created",
-            "output_file": output_filename,
-            "duration": "20s",
-            "audio_tracks": ["aac mono", "mp3 stereo 64k", "ac3"]
-        }
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"FFmpeg error: {str(e)}")
+    run_ffmpeg(command)
     
+    return {
+        "status": "bbb_container_created",
+        "output_file": output_filename,
+        "duration": "20s",
+        "audio_tracks": ["aac mono", "mp3 stereo 64k", "ac3"]
+    }   
 # Nombre de Tracks del Contenidor
 @app.get("/video/tracks/{filename}")
 def count_tracks(filename: str):
@@ -356,15 +327,13 @@ def show_motion_vectors(filename: str):
         output_path
     ]
 
-    try:
-        subprocess.run(command, check=True)
-        return {
-            "status": "motion_vectors_generated",
-            "output_file": output_filename,
-            "description": "Vídeo amb macroblocks i vectors de moviment visibles"
-        }
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"FFmpeg error: {str(e)}")
+    run_ffmpeg(command)
+    
+    return {
+        "status": "motion_vectors_generated",
+        "output_file": output_filename,
+        "description": "Vídeo amb macroblocks i vectors de moviment visibles"
+    }
     
 # Mostrar Histograma YUV
 @app.post("/video/yuv-histogram/{filename}")
@@ -388,15 +357,13 @@ def show_yuv_histogram(filename: str):
         output_path
     ]
 
-    try:
-        subprocess.run(command, check=True)
-        return {
-            "status": "yuv_histogram_generated",
-            "output_file": output_filename,
-            "description": "Vídeo amb histograma YUV visible"
-        }
-    except subprocess.CalledProcessError as e:
-        raise HTTPException(status_code=500, detail=f"FFmpeg error: {str(e)}")
+    run_ffmpeg(command)
+    
+    return {
+        "status": "yuv_histogram_generated",
+        "output_file": output_filename,
+        "description": "Vídeo amb histograma YUV visible"
+    }
     
 # Convertir Vídeo a Còdecs (VP8, VP9, H265, AV1)
 @app.post("/video/convert-codecs/{filename}")
