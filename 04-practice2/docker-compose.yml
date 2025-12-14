@@ -18,3 +18,14 @@ services:
       - ./videos:/data # Això connecta les carpetes automàticament
     ports:
     - "9000:9000"
+
+  # GUI
+  gui:
+    build: ./gui
+    container_name: practice2-gui
+    environment:
+      - API_BASE=http://api:8000
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./videos:/data

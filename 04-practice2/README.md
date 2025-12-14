@@ -44,6 +44,12 @@ Aquest projecte implementa una API REST amb **FastAPI** encapsulada dins d'un co
 
    Aquí volem construir un encoding ladder, és a dir diverses versions d'un mateix vídeo amb diferents resolucions i bitrates. Hem definit una funció auxiliar per a codificar a un cert còdec, i l'hem utilitzat en un nou endpoint per a fer l'Encoding Ladder.
 
+3. Task 3
+
+   Fins ara, tenim un API que permet fer diversos processos amb imatges i vídeos. Per crear una interfície gràfica, hi ha moltes opcions. Dit això, com que hem anat justos de temps i a més ja hi hem treballat en altres ocasions, hem decidit utilitzar Streamlit.
+
+   En primer lloc, hem creat un nou servei, com API i FFMPEG, anomenat GUI. Aquest també comparteix les dades de la carpeta `./videos:/data`. Aquest servei utilitza el port 8501, que és el predeterminat per a Streamlit.
+
 ---
 **Autors:** Jordi Rubio & Lluc Sayols
 
